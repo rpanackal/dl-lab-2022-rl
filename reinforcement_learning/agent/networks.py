@@ -15,6 +15,7 @@ class MLP(nn.Module):
     self.fc3 = nn.Linear(hidden_dim, action_dim)
 
   def forward(self, x):
+    
     x = F.relu(self.fc1(x))
     x = F.relu(self.fc2(x))
     return self.fc3(x)

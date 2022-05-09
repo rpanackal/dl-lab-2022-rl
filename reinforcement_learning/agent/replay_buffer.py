@@ -9,9 +9,11 @@ class ReplayBuffer:
     # TODO: implement a capacity for the replay buffer (FIFO, capacity: 1e5 - 1e6)
 
     # Replay buffer for experience replay. Stores transitions.
-    def __init__(self):
+    def __init__(self, history_length, capacity):
         self._data = namedtuple("ReplayBuffer", ["states", "actions", "next_states", "rewards", "dones"])
         self._data = self._data(states=[], actions=[], next_states=[], rewards=[], dones=[])
+        self.counter = 0
+        self.capacity = capacity
 
     def add_transition(self, state, action, next_state, reward, done):
         """

@@ -24,6 +24,8 @@ def run_episode(env, agent, deterministic, do_training=True, rendering=False, ma
     while True:
         
         action_id = agent.act(state=state, deterministic=deterministic)
+        print(action_id)
+        continue
         next_state, reward, terminal, info = env.step(action_id)
 
         if do_training:  
@@ -89,6 +91,14 @@ if __name__ == "__main__":
 
     # TODO: 
     # 1. init Q network and target network (see dqn/networks.py)
+    Q_head = MLP(state_dim, num_actions)
+    Q_tail = MLP(state_dim, num_actions)
+
     # 2. init DQNAgent (see dqn/dqn_agent.py)
+    agent = DQNAgent(Q_head, Q_tail, state_dim, num_actions)
+
+    
     # 3. train DQN agent with train_online(...)
+    # What is number of episodes ?
+    train_online(env, agent, num_episodes=10)
  
