@@ -180,7 +180,7 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
 
 if __name__ == "__main__":
 
-    n_minibatches=2000
+    n_minibatches=1000
     batch_size=128
     lr=1e-4
     n_classes=5

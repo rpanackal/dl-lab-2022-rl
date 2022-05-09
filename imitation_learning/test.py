@@ -35,17 +35,17 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
         #state = np.expand_dims(rgb2gray(state), (0,1))
         
         state = rgb2gray(state)
-        print("input state",state.shape)
+        
         if history:
             history.append(state)
             history.pop(0)
         else:
             history = [state for i in range(history_length)]
 
-        print("length of history", len(history))
+        #print("length of history", len(history))
         state = np.array(history)[np.newaxis, ...]
-        print("transformed state",state.shape)
-        print("After expanding dimension- Shape", state.shape, " Type:", type(state))
+        #print("transformed state",state.shape)
+        #print("After expanding dimension- Shape", state.shape, " Type:", type(state))
         
         # TODO: get the action from your agent! You need to transform the discretized actions to continuous
         # actions.
@@ -61,8 +61,6 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
         # else:
         #     a = np.array([0.0, 1, 0.0])
         #     forced_accel = False
-
-        print("Action: ", a)
 
         next_state, r, done, info = env.step(a)   
         episode_reward += r       
@@ -84,7 +82,7 @@ if __name__ == "__main__":
     # important: don't set rendering to False for evaluation (you may get corrupted state images from gym)
     rendering = True                      
     
-    history_length = 3
+    history_length = 1
     model_dir="./models"
     tensorboard_dir="./tensorboard"
     n_test_episodes = 15                  # number of episodes to test
