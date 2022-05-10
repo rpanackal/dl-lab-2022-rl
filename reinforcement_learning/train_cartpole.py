@@ -23,9 +23,9 @@ def run_episode(env, agent, deterministic, do_training=True, rendering=False, ma
     step = 0
     while True:
         
-        action_id = agent.act(state=state, deterministic=deterministic)
-        print(action_id)
-        continue
+        action_id = agent.act(state=state, deterministic=deterministic).item()
+        #print(action_id)
+        #continue
         next_state, reward, terminal, info = env.step(action_id)
 
         if do_training:  
@@ -52,6 +52,7 @@ def train_online(env, agent, num_episodes, model_dir="./models_cartpole", tensor
     print("... train agent")
 
     tensorboard = Evaluation(os.path.join(tensorboard_dir, "train"), ["episode_reward", "a_0", "a_1"])
+    tensorboard_val = Evaluation(os.path.join(tensorboard_dir, "val"), ["episode_reward", "a_0", "a_1"])
 
     # training
     for i in range(num_episodes):
@@ -67,6 +68,12 @@ def train_online(env, agent, num_episodes, model_dir="./models_cartpole", tensor
         # if i % eval_cycle == 0:
         #    for j in range(num_eval_episodes):
         #       ...
+        if i % eval_cycle == 0:
+            for j in range(num_eval_episodes):
+                stats_val = run_episode(env, agent, deterministic=True, do_training=False)
+                tensorboard_val.write_episode_data(i, eval_dict={  "episode_reward" : stats_val.episode_reward, 
+                                                                "a_0" : stats_val.get_action_usage(0),
+                                                                "a_1" : stats_val.get_action_usage(1)})
         
         # store model.
         if i % eval_cycle == 0 or i >= (num_episodes - 1):
@@ -95,7 +102,7 @@ if __name__ == "__main__":
     Q_tail = MLP(state_dim, num_actions)
 
     # 2. init DQNAgent (see dqn/dqn_agent.py)
-    agent = DQNAgent(Q_head, Q_tail, state_dim, num_actions)
+    agent = DQNAgent(Q_head, Q_tail, num_actions)
 
     
     # 3. train DQN agent with train_online(...)

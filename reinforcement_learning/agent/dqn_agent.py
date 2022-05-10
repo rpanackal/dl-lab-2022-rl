@@ -60,18 +60,19 @@ class DQNAgent:
         # 2. sample next batch and perform batch update: 
         batch_states, batch_actions, batch_next_states, batch_rewards, \
             batch_dones = self.replay_buffer.next_batch(self.batch_size)
-        #       2.1 compute td targets and loss 
-        
-        current_Q_values = self.Q(batch_states)[torch.arange(self.batch_size).long(), batch_actions.long()]
+        #       2.1 compute td targets and loss         
+        current_Q_values = self.Q(batch_states)[torch.arange(self.batch_size), batch_actions]
 
         target_Q_values = self.Q_target(batch_next_states) 
-        td_targets = batch_rewards + (1-batch_dones)*self.gamma*torch.max(target_Q_values, dim=1)
-
-        loss = self._loss_function(current_Q_values, td_targets.detach())
+        #import ipdb;ipdb.set_trace()
+        td_targets = batch_rewards + (1-batch_dones)*self.gamma*torch.max(target_Q_values).item()#.detach().cpu(), dim=1)
+        
+        loss = self.loss_function(current_Q_values, torch.tensor(td_targets, device=self.device)).float()#.detach())
 
         #              td_target =  reward + discount * max_a Q_target(next_state_batch, a)
         #       2.2 update the Q network
         self.optimizer.zero_grad()
+        loss=loss.float()
         loss.backward()
         self.optimizer.step()
         #       2.3 call soft update for target network
@@ -89,17 +90,20 @@ class DQNAgent:
         """
         r = np.random.uniform()
         if deterministic or r > self.epsilon:
-            pass
+            #pass
             # TODO: take greedy action (argmax)
             
             action_id = torch.argmax(self.predict(self.Q, state))
         else:
-            pass
+            #pass
             # TODO: sample random action
             # Hint for the exploration in CarRacing: sampling the action from a uniform distribution will probably not work. 
             # You can sample the agents actions with different probabilities (need to sum up to 1) so that the agent will prefer to accelerate or going straight.
             # To see how the agent explores, turn the rendering in the training on and look what the agent is doing.
-            action_id = np.random.randint(self.num_actions)
+            #action_id = np.random.randint(self.num_actions)
+            #print("Number of actions: ", self.num_actions)
+            action_id = torch.randint(low=0, high=self.num_actions+1, size=[], device=self.device)
+            #print("Coming from else: ", action_id)
 
         return action_id
 

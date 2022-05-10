@@ -1,3 +1,4 @@
+from tokenize import Double
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -14,10 +15,11 @@ class MLP(nn.Module):
     self.fc2 = nn.Linear(hidden_dim, hidden_dim)
     self.fc3 = nn.Linear(hidden_dim, action_dim)
 
-  def forward(self, x):
-    
+  def forward(self, x):    
+    x = torch.tensor(x, device="cuda:0").float()
     x = F.relu(self.fc1(x))
     x = F.relu(self.fc2(x))
     return self.fc3(x)
+    
 
 
