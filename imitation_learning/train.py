@@ -15,6 +15,7 @@ from utils import *
 from agent.bc_agent import BCAgent
 from tensorboard_evaluation import Evaluation
 import argparse
+import torch
 
 def read_data(datasets_dir="./data", frac = 0.1):
     """
@@ -50,6 +51,24 @@ def key_picker(y):
     
     return y
 
+def stack_history(X, history_length):
+    X_hist = []
+    for i in range(len(X)):
+
+        if i < history_length:
+            # States without enough history has first
+            # state repeated
+            indices = ([0]*(history_length-i-1))
+            indices.extend([j for j in range(i+1)])
+
+            X_hist.append(X[indices, ...])
+        else:
+            # Append past history_length images
+            head = i-history_length+1
+            X_hist.append(X[head:i+1, ...])
+    
+    return np.array(X_hist)
+
 def preprocessing(X_train, y_train, X_valid, y_valid, history_length=1):
 
     print("...preproccessing")
@@ -64,25 +83,27 @@ def preprocessing(X_train, y_train, X_valid, y_valid, history_length=1):
     X_valid = rgb2gray(X_valid)
 
     print("...attaching history ",history_length)
-    X_hist = []
-    for i in range(len(X_train)):
+    # X_hist = []
+    # for i in range(len(X_train)):
 
-        if i < history_length:
-            # States without enough history has first
-            # state repeated
-            indices = ([0]*(history_length-i-1))
-            indices.extend([j for j in range(i+1)])
+    #     if i < history_length:
+    #         # States without enough history has first
+    #         # state repeated
+    #         indices = ([0]*(history_length-i-1))
+    #         indices.extend([j for j in range(i+1)])
 
-            X_hist.append(X_train[indices, ...])
-        else:
-            # Append past history_length images
-            head = i-history_length+1
-            X_hist.append(X_train[head:i+1, ...])
+    #         X_hist.append(X_train[indices, ...])
+    #     else:
+    #         # Append past history_length images
+    #         head = i-history_length+1
+    #         X_hist.append(X_train[head:i+1, ...])
     
-    X_hist = np.array(X_hist) 
+    # X_hist = np.array(X_hist) 
+    X_train = stack_history(X_train, history_length)
+    X_valid = stack_history(X_valid, history_length)
 
 
-    print("Samples wih history", X_hist.shape)
+    #print("Samples wih history", X_hist.shape)
 
     # 2. you can train your model with discrete actions (as you get them from read_data) by discretizing the action space 
     #    using action_to_id() from utils.py.
@@ -95,7 +116,7 @@ def preprocessing(X_train, y_train, X_valid, y_valid, history_length=1):
     # have shape (96, 96, 1). Later, add a history of the last N images to your state so that a state has shape (96, 96, N).
     
     
-    return X_hist, y_train, X_valid, y_valid
+    return X_train, y_train, X_valid, y_valid
 
 def sample_by_weight(X, y, batch_size, n_classes):
     freq_dict = class_frequency(y)
@@ -143,7 +164,7 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
     
     name = f"h{history_length}-bs{batch_size}-lr{lr:.4f}"
 
-    tensorboard_eval = Evaluation(tensorboard_dir, name=name, stats=["training_loss", "training_accuracy"])
+    tensorboard_eval = Evaluation(tensorboard_dir, name=name, stats=["training_loss", "training_accuracy", "validation_loss", "validation_accuracy"])
 
     # TODO: implement the training
     # 
@@ -152,6 +173,8 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
     #    your training *during* the training in your web browser
 
     minibatch = sample_by_weight(X_train, y_train, batch_size, n_classes)
+    minibatch_val = sample_by_weight(X_valid, y_valid, batch_size, n_classes)
+
     print(X_train.shape)
     #minibatch = sample_minibatch(X_train, y_train, batch_size)
     
@@ -161,10 +184,17 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
         X_batch, y_batch = next(minibatch)
 
         loss, accuracy = agent.update(X_batch, y_batch)
-
+         
         if i % 10 == 0:
             #print("Loss : ", loss.item(), " Accuracy : ", accuracy.item(), "%")
             tensorboard_eval.write_episode_data(i+1, {"training_loss": loss.item(), "training_accuracy": accuracy.item()})
+
+            with torch.no_grad():
+                X_batch_valid, y_batch_valid = next(minibatch_val)
+                loss_val, accuracy_val = agent.validate(X_batch_valid, y_batch_valid)
+            
+            tensorboard_eval.write_episode_data(i+1, {"validation_loss": loss_val.item(), "validation_accuracy": accuracy_val.item()})
+
 
     # training loop
     # for i in range(n_minibatches):

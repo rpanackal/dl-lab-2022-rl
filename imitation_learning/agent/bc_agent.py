@@ -20,7 +20,7 @@ class BCAgent:
     def update(self, X_batch, y_batch):
 
         
-
+        self.net.train()
         # TODO: transform input to tensors
         # X_batch = torch.from_numpy(X_batch).to(self.device)
         y_batch = torch.from_numpy(y_batch).to(self.device)
@@ -34,6 +34,24 @@ class BCAgent:
         
         loss.backward()
         self.optimizer.step()
+
+        predictions = torch.argmax(outputs, 1)
+        accuracy = 100*(predictions == y_batch).sum()/len(y_batch)
+
+        return loss, accuracy
+
+    def validate(self, X_batch, y_batch):
+
+        self.net.eval()
+        # TODO: transform input to tensors
+        # X_batch = torch.from_numpy(X_batch).to(self.device)
+        y_batch = torch.from_numpy(y_batch).to(self.device)
+
+        # TODO: forward + backward + optimize
+        # zero the parameter_gradients
+        
+        outputs = self.predict(X_batch)
+        loss = self.criterion(outputs, y_batch)
 
         predictions = torch.argmax(outputs, 1)
         accuracy = 100*(predictions == y_batch).sum()/len(y_batch)
