@@ -60,7 +60,7 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
         # if not forced_accel:
         output = agent.predict(state)
         prediction = torch.argmax(output)
-        a = id_to_action(prediction)
+        a = id_to_action(prediction, max_speed=1.0)
         # else:
         #     a = np.array([0.0, 1, 0.0])
         #     forced_accel = False
