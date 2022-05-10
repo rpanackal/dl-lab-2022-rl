@@ -1,4 +1,5 @@
 from __future__ import print_function
+from asyncio.log import logger
 
 import sys
 sys.path.append("../") 
@@ -10,8 +11,10 @@ import os
 import json
 import torch
 
+from tensorboard_evaluation import Evaluation
 from agent.bc_agent import BCAgent
 from utils import *
+import argparse
 
 
 def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1):
@@ -79,33 +82,43 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-hl", "--history_length", help="it's in the name", type=int, default=1)
+    parser.add_argument("-l", "--learning_rate", help="it's in the name", type=float, default=1e-2)    
+    args = parser.parse_args()
     # important: don't set rendering to False for evaluation (you may get corrupted state images from gym)
     rendering = True                      
     
-    history_length = 1
+    history_length = args.history_length
+    lr = args.learning_rate
     model_dir="./models"
     tensorboard_dir="./tensorboard"
     n_test_episodes = 15                  # number of episodes to test
 
     # TODO: load agent
     agent = BCAgent(history_length=history_length)
-    
-    agent.load(f"{model_dir}/h{history_length}-agent.pt")
+    name = f"test-h{history_length}-agent"
+    tensorboard_eval = Evaluation(tensorboard_dir, name=name, stats=["episode_id", "episode_return", "history_length"])
+    model_name=f"{model_dir}/h{history_length}-lr{lr}-agent.pt"
+    agent.load(model_name)
 
     env = gym.make('CarRacing-v0').unwrapped
 
     episode_rewards = []
     for i in range(n_test_episodes):
         episode_reward = run_episode(env, agent, rendering=rendering, history_length=history_length)
+        tensorboard_eval.write_episode_data(i+1, {"episode_id": i, "episode_return": episode_reward, "history_length": history_length})
         episode_rewards.append(episode_reward)
+        
 
     # save results in a dictionary and write them into a .json file
     results = dict()
     results["episode_rewards"] = episode_rewards
     results["mean"] = np.array(episode_rewards).mean()
     results["std"] = np.array(episode_rewards).std()
+    results["history length"]=history_length
  
-    fname = "./results/results_bc_agent-%s.json" % datetime.now().strftime("%Y%m%d-%H%M%S")
+    fname = "./results/history_%d_results_bc_agent-%s.json" %(history_length, datetime.now().strftime("%Y%m%d-%H%M%S"))
     fh = open(fname, "w")
     json.dump(results, fh)
             

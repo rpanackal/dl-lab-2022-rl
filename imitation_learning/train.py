@@ -14,6 +14,7 @@ from tabulate import tabulate
 from utils import *
 from agent.bc_agent import BCAgent
 from tensorboard_evaluation import Evaluation
+import argparse
 
 def read_data(datasets_dir="./data", frac = 0.1):
     """
@@ -173,18 +174,26 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
     #         tensorboard_eval.write_episode_data(...)
       
     # TODO: save your agent
-    file_name = f"h{history_length}-agent.pt"
+    file_name = f"h{history_length}-lr{lr}-agent.pt"
     model_dir = agent.save(os.path.join(model_dir, file_name))
     print("Model saved in file: %s" % model_dir)
 
 
 if __name__ == "__main__":
 
-    n_minibatches=1000
-    batch_size=128
-    lr=1e-4
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-hl", "--history_length", help="it's in the name", type=int, default=1)
+    parser.add_argument("-b", "--batch_size", help="it's in the name", type=int, default=128)
+    parser.add_argument("-l", "--learning_rate", help="it's in the name", type=float, default=1e-2)    
+    parser.add_argument("-n", "--number_mini_batches", help="it's in the name", type=int, default=1000)
+    
+    args = parser.parse_args()
+
+    n_minibatches=args.number_mini_batches
+    batch_size=args.batch_size
+    lr=args.learning_rate
     n_classes=5
-    history_length=1
+    history_length=args.history_length
     model_dir="./models"
     tensorboard_dir="./tensorboard"
 
