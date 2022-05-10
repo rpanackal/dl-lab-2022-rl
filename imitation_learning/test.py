@@ -118,7 +118,7 @@ if __name__ == "__main__":
     results["std"] = np.array(episode_rewards).std()
     results["history length"]=history_length
  
-    fname = "./results/history_%d_results_bc_agent-%s.json" %(history_length, datetime.now().strftime("%Y%m%d-%H%M%S"))
+    fname = "./results/history_%d_lr_%d_results_bc_agent-%s.json" %(history_length, lr, datetime.now().strftime("%Y%m%d-%H%M%S"))
     fh = open(fname, "w")
     json.dump(results, fh)
             

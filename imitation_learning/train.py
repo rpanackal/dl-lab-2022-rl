@@ -206,7 +206,7 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
     # TODO: save your agent
     file_name = f"h{history_length}-lr{lr}-agent.pt"
     model_dir = agent.save(os.path.join(model_dir, file_name))
-    print("Model saved in file: %s" % model_dir)
+    print("Model saved in file: %s" % file_name)
 
 
 if __name__ == "__main__":
