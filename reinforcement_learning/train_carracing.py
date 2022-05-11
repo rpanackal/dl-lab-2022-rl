@@ -144,7 +144,7 @@ def train_online(env, agent, num_episodes, history_length=0, num_eval_episodes=2
         # store model.
         if i % eval_cycle == 0 or (i >= num_episodes - 1):
             model_name = name + "_dqn_agent.ckpt"
-            agent.save(agent.sess, os.path.join(model_dir, model_name)) 
+            agent.save(agent, os.path.join(model_dir, model_name)) 
         """
         Schedule for epsilon
         agent.epsilon
