@@ -29,6 +29,7 @@ class CNN(nn.Module):
     def __init__(self, n_classes=3, history_length=1): 
         super(CNN, self).__init__()
         # TODO : define layers of a convolutional neural networkp
+        self.n_classes=n_classes
         self.model = nn.Sequential(
             nn.Conv2d(history_length, 16, kernel_size=7, stride=1, padding=1),
             nn.BatchNorm2d(16),
@@ -59,5 +60,6 @@ class CNN(nn.Module):
     def forward(self, x):
         # TODO: compute forward pass
         
-        #x = torch.moveaxis(x, 3, 1)
+        if self.n_classes>2:
+          x = torch.moveaxis(x, 3, 1)
         return self.model(x)

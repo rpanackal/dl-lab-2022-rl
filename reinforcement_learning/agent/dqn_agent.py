@@ -14,7 +14,7 @@ def soft_update(target, source, tau):
 class DQNAgent:
 
     def __init__(self, Q, Q_target, num_actions, gamma=0.95, batch_size=64, epsilon=0.1, tau=0.01, lr=1e-4,
-                 history_length=0, capacity=1e5):
+                 history_length=0, capacity=1e5, use_double=False):
         """
          Q-Learning agent for off-policy TD control using Function Approximation.
          Finds the optimal greedy policy while following an epsilon-greedy policy.
@@ -48,6 +48,7 @@ class DQNAgent:
         self.optimizer = optim.Adam(self.Q.parameters(), lr=lr)
 
         self.num_actions = num_actions
+        self.use_double = use_double
 
     def train(self, state, action, next_state, reward, terminal):
         """
@@ -56,13 +57,15 @@ class DQNAgent:
 
         # TODO:
         # 1. add current transition to replay buffer
+        self.optimizer.zero_grad()
         self.replay_buffer.add_transition(state, action, next_state, reward, terminal)
 
         # 2. sample next batch and perform batch update: 
         batch_states, batch_actions, batch_next_states, batch_rewards, \
             batch_dones = self.replay_buffer.next_batch(self.batch_size)
         
-        batch_states = self.to_gpu(batch_next_states)
+        batch_states = self.to_gpu(batch_states)
+        batch_actions = self.to_gpu(batch_actions).long().view(batch_actions.shape[0], 1)
         #batch_actions = self.to_gpu(batch_actions)
         batch_next_states = self.to_gpu(batch_next_states)
         batch_rewards = self.to_gpu(batch_rewards)
@@ -70,23 +73,35 @@ class DQNAgent:
 
         #print(batch_dones)
         #       2.1 compute td targets and loss         
-        current_Q_values = self.predict(self.Q, batch_states)[torch.arange(len(batch_states)), batch_actions]
         
-        target_Q_values = self.predict(self.Q_target, batch_next_states)
+        
+        
         #import ipdb;ipdb.set_trace()
-        td_targets = batch_rewards + (1-batch_dones)*self.gamma*torch.max(target_Q_values, dim=1)[0]
+        #current_Q_values = self.predict(self.Q, batch_states)[torch.arange(len(batch_states)), batch_actions]
+        current_Q_values = self.Q(batch_states).gather(1, batch_actions).squeeze(1)
         
-        loss = self.loss_function(current_Q_values, td_targets)#.float()#.detach())
+        if not self.use_double:
+            target_Q_values = self.predict(self.Q_target, batch_next_states)
+            td_targets = batch_rewards + (1-batch_dones)*self.gamma*torch.max(target_Q_values, dim=1)[0]
+        else:
+            double_q_actions = torch.argmax(self.Q(batch_next_states), dim=1)
+            target_Q_values = self.predict(self.Q_target, batch_next_states)[torch.arange(self.batch_size), double_q_actions]
+            td_targets = batch_rewards + (1-batch_dones)*self.gamma*target_Q_values
+
+        
+        
+        loss = self.loss_function(current_Q_values, td_targets.detach())#.float()#.detach())
 
         #              td_target =  reward + discount * max_a Q_target(next_state_batch, a)
         #       2.2 update the Q network
-        self.optimizer.zero_grad()
+        
         
         loss.backward()
         self.optimizer.step()
         #       2.3 call soft update for target network
         #           soft_update(self.Q_target, self.Q, self.tau)
         soft_update(self.Q_target, self.Q, tau=self.tau)
+        return loss
 
     def act(self, state, deterministic):
         """
@@ -101,7 +116,7 @@ class DQNAgent:
         if deterministic or r > self.epsilon:
             #pass
             # TODO: take greedy action (argmax)
-            
+            #print("Predicting Action by Network")
             state = self.to_gpu(state)
             action_id = torch.argmax(self.predict(self.Q, state)).item()
         else:
@@ -113,14 +128,19 @@ class DQNAgent:
             #action_id = np.random.randint(self.num_actions)
             #print("Number of actions: ", self.num_actions)
             action_id = np.random.randint(self.num_actions)
+            #print("Random action")
             #print("Coming from else: ", action_id)
 
         return action_id
 
-    def predict(self, net, x):
-        #x = torch.from_numpy(x).to(self.device).float()
-        x = torch.moveaxis(x, 3, 1)
-        return net(x)
+    def predict(self, net, state):
+        #x = torch.from_numpy(x).to(self.device).float()        
+        if len(state.shape)==3:
+            state=state[np.newaxis, ...]
+        #if self.num_actions>2:
+        #    print(state.shape)
+            #state = torch.moveaxis(state, 3, 1)
+        return net(state)
     
     def to_gpu(self, x):
         return torch.tensor(x).to(self.device).float()

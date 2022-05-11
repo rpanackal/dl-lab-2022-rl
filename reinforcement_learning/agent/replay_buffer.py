@@ -19,11 +19,21 @@ class ReplayBuffer:
         """
         This method adds a transition to the replay buffer.
         """
+        self.counter+=1
+        if self.counter > self.capacity:
+            print('Overwriting Replay Buffer')
+            self._data.states.pop(0)
+            self._data.actions.pop(0)
+            self._data.next_states.pop(0)
+            self._data.rewards.pop(0)
+            self._data.dones.pop(0)
+
         self._data.states.append(state)
         self._data.actions.append(action)
         self._data.next_states.append(next_state)
         self._data.rewards.append(reward)
         self._data.dones.append(done)
+        
 
     def next_batch(self, batch_size):
         """

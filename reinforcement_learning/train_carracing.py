@@ -41,8 +41,6 @@ def run_episode(env, agent, deterministic, skip_frames=0,  do_training=True, ren
     #state = torch.moveaxis(torch.tensor(state), 3, 1)
     
     while True:
-        state=state[np.newaxis, ...]
-
         # TODO: get action_id from agent
         # Hint: adapt the probabilities of the 5 actions for random sampling so that the agent explores properly. 
         # action_id = agent.act(...)

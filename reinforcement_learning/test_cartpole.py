@@ -12,17 +12,23 @@ np.random.seed(0)
 if __name__ == "__main__":
 
     model_dir="./models_cartpole"
-    num_train_episodes = 1000
+    num_train_episodes = 500
     
 
     n_test_episodes = 15
     state_dim = 4
     num_actions = 2
 
-    lr=1e-3
-    epsilon_max=0.9
+    lr=1e-4
+    epsilon_max=0.2
+    use_double=True
+    #decay="experimental"
+    decay="exponential"
 
-    name = f"cartpole_ne{num_train_episodes}_lr{lr}_ep{epsilon_max}dqn_agent.pt"
+    if use_double:
+        name = f"cartpole_ne{num_train_episodes}_lr{lr}_ep{epsilon_max}{decay}best_ddqn_agent.pt"
+    else:
+        name = f"cartpole_ne{num_train_episodes}_lr{lr}_ep{epsilon_max}{decay}best_dqn_agent.pt"
     env = gym.make("CartPole-v0").unwrapped
 
     # TODO: load DQN agent
@@ -37,7 +43,7 @@ if __name__ == "__main__":
 
     episode_rewards = []
     for i in range(n_test_episodes):
-        stats = run_episode(env, agent, deterministic=True, do_training=False, rendering=True)
+        stats, loss = run_episode(env, agent, deterministic=True, do_training=False, rendering=True)
         episode_rewards.append(stats.episode_reward)
 
     # save results in a dictionary and write them into a .json file
@@ -48,8 +54,13 @@ if __name__ == "__main__":
  
     if not os.path.exists("./results"):
         os.mkdir("./results")  
+    name = f"final_{str(n_test_episodes)}_trails_"+name
 
-    fname = "./results/cartpole_results_dqn-%s.json" % datetime.now().strftime("%Y%m%d-%H%M%S")
+    decay = "exponential" if decay=="" else decay
+    if use_double:
+        fname = "./results/cartpole_results_ddqn-%s_%s.json" % (datetime.now().strftime("%Y%m%d-%H%M%S"), name)
+    else:
+        fname = "./results/cartpole_results_dqn-%s_%s.json" % (datetime.now().strftime("%Y%m%d-%H%M%S"), name)
     fh = open(fname, "w")
     json.dump(results, fh)
             
