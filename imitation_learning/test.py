@@ -97,8 +97,8 @@ if __name__ == "__main__":
 
     # TODO: load agent
     agent = BCAgent(history_length=history_length)
-    name = f"test-h{history_length}-agent"
-    tensorboard_eval = Evaluation(tensorboard_dir, name=name, stats=["episode_id", "episode_return", "history_length"])
+    name = f"test-h{history_length}-lr{lr}-agent"
+    tensorboard_eval = Evaluation(tensorboard_dir, name=name, stats=["episode_id", "episode_return", "history_length", "learning_rate"])
     model_name=f"{model_dir}/h{history_length}-lr{lr}-agent.pt"
     agent.load(model_name)
 
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     episode_rewards = []
     for i in range(n_test_episodes):
         episode_reward = run_episode(env, agent, rendering=rendering, history_length=history_length)
-        tensorboard_eval.write_episode_data(i+1, {"episode_id": i, "episode_return": episode_reward, "history_length": history_length})
+        tensorboard_eval.write_episode_data(i+1, {"episode_id": i, "episode_return": episode_reward, "history_length": history_length, "learning_rate": lr})
         episode_rewards.append(episode_reward)
         
 

@@ -2,6 +2,7 @@ from cmath import tau
 import numpy as np
 import torch
 import torch.optim as optim
+from zmq import device
 from agent.replay_buffer import ReplayBuffer
 
 
@@ -13,7 +14,7 @@ def soft_update(target, source, tau):
 class DQNAgent:
 
     def __init__(self, Q, Q_target, num_actions, gamma=0.95, batch_size=64, epsilon=0.1, tau=0.01, lr=1e-4,
-                 history_length=0):
+                 history_length=0, capacity=1e5):
         """
          Q-Learning agent for off-policy TD control using Function Approximation.
          Finds the optimal greedy policy while following an epsilon-greedy policy.
@@ -35,7 +36,7 @@ class DQNAgent:
         self.Q_target.load_state_dict(self.Q.state_dict())
 
         # define replay buffer
-        self.replay_buffer = ReplayBuffer(history_length, capacity=1e5)
+        self.replay_buffer = ReplayBuffer(history_length, capacity=capacity)
 
         # parameters
         self.batch_size = batch_size
@@ -60,19 +61,27 @@ class DQNAgent:
         # 2. sample next batch and perform batch update: 
         batch_states, batch_actions, batch_next_states, batch_rewards, \
             batch_dones = self.replay_buffer.next_batch(self.batch_size)
-        #       2.1 compute td targets and loss         
-        current_Q_values = self.Q(batch_states)[torch.arange(self.batch_size), batch_actions]
-
-        target_Q_values = self.Q_target(batch_next_states) 
-        #import ipdb;ipdb.set_trace()
-        td_targets = batch_rewards + (1-batch_dones)*self.gamma*torch.max(target_Q_values).item()#.detach().cpu(), dim=1)
         
-        loss = self.loss_function(current_Q_values, torch.tensor(td_targets, device=self.device)).float()#.detach())
+        batch_states = self.to_gpu(batch_next_states)
+        #batch_actions = self.to_gpu(batch_actions)
+        batch_next_states = self.to_gpu(batch_next_states)
+        batch_rewards = self.to_gpu(batch_rewards)
+        batch_dones = self.to_gpu(batch_dones)
+
+        #print(batch_dones)
+        #       2.1 compute td targets and loss         
+        current_Q_values = self.predict(self.Q, batch_states)[torch.arange(len(batch_states)), batch_actions]
+        
+        target_Q_values = self.predict(self.Q_target, batch_next_states)
+        #import ipdb;ipdb.set_trace()
+        td_targets = batch_rewards + (1-batch_dones)*self.gamma*torch.max(target_Q_values, dim=1)[0]
+        
+        loss = self.loss_function(current_Q_values, td_targets)#.float()#.detach())
 
         #              td_target =  reward + discount * max_a Q_target(next_state_batch, a)
         #       2.2 update the Q network
         self.optimizer.zero_grad()
-        loss=loss.float()
+        
         loss.backward()
         self.optimizer.step()
         #       2.3 call soft update for target network
@@ -87,13 +96,14 @@ class DQNAgent:
             deterministic:  if True, the agent should execute the argmax action (False in training, True in evaluation)
         Returns:
             action id
-        """
+        """        
         r = np.random.uniform()
         if deterministic or r > self.epsilon:
             #pass
             # TODO: take greedy action (argmax)
             
-            action_id = torch.argmax(self.predict(self.Q, state))
+            state = self.to_gpu(state)
+            action_id = torch.argmax(self.predict(self.Q, state)).item()
         else:
             #pass
             # TODO: sample random action
@@ -102,14 +112,21 @@ class DQNAgent:
             # To see how the agent explores, turn the rendering in the training on and look what the agent is doing.
             #action_id = np.random.randint(self.num_actions)
             #print("Number of actions: ", self.num_actions)
-            action_id = torch.randint(low=0, high=self.num_actions+1, size=[], device=self.device)
+            action_id = np.random.randint(self.num_actions)
             #print("Coming from else: ", action_id)
 
         return action_id
 
     def predict(self, net, x):
-        x = torch.from_numpy(x).to(self.device).float()
+        #x = torch.from_numpy(x).to(self.device).float()
+        x = torch.moveaxis(x, 3, 1)
         return net(x)
+    
+    def to_gpu(self, x):
+        return torch.tensor(x).to(self.device).float()
+    
+    def to_cpu(self, x):
+        return x.numpy()
 
     def save(self, file_name):
         torch.save(self.Q.state_dict(), file_name)
@@ -117,3 +134,4 @@ class DQNAgent:
     def load(self, file_name):
         self.Q.load_state_dict(torch.load(file_name))
         self.Q_target.load_state_dict(torch.load(file_name))
+

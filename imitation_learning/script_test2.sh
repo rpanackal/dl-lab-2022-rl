@@ -14,13 +14,6 @@ echo "Started"
 #python test.py -hl 15 -l 0.0001
 #echo "task4 done"
 
-python test.py -hl 1 -l 0.01
-echo "task5 done"
 
-python test.py -hl 3 -l 0.01
-echo "task6 done"
-
-python test.py -hl 5 -l 0.01
-echo "task7 done"
 
 

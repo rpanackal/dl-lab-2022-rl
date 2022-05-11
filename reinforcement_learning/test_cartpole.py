@@ -11,12 +11,29 @@ np.random.seed(0)
 
 if __name__ == "__main__":
 
+    model_dir="./models_cartpole"
+    num_train_episodes = 1000
+    
+
+    n_test_episodes = 15
+    state_dim = 4
+    num_actions = 2
+
+    lr=1e-3
+    epsilon_max=0.9
+
+    name = f"cartpole_ne{num_train_episodes}_lr{lr}_ep{epsilon_max}dqn_agent.pt"
     env = gym.make("CartPole-v0").unwrapped
 
     # TODO: load DQN agent
     # ...
- 
-    n_test_episodes = 15
+
+    Q_head = MLP(state_dim, num_actions)
+    Q_tail = MLP(state_dim, num_actions)
+
+    agent = DQNAgent(Q_head, Q_tail, num_actions)
+    agent.load(model_dir+"/"+name)
+
 
     episode_rewards = []
     for i in range(n_test_episodes):

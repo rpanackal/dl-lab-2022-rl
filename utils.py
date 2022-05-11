@@ -47,6 +47,24 @@ def id_to_action(action_id, max_speed=0.8):
     else:
         return np.array([0.0, 0.0, 0.0])
     
+def better_id_to_action(action_id, max_speed=1.0):
+    """ 
+    this method makes actions continous.
+    Important: this method only works if you recorded data pressing only one key at a time!
+    """
+    a = np.array([0.0, 0.0, 0.0])
+
+    if action_id == LEFT:
+        return np.array([-1.0, 0.0, 0.02])
+    elif action_id == RIGHT:
+        return np.array([1.0, 0.0, 0.02])
+    elif action_id == ACCELERATE:
+        return np.array([0.0, max_speed, 0.0])
+    elif action_id == BRAKE:
+        return np.array([0.0, 0.0, 0.1])
+    else:
+        return np.array([0.0, 0.0, 0.0])
+    
 
 class EpisodeStats:
     """
