@@ -12,7 +12,7 @@ from utils import EpisodeStats, rgb2gray
 from utils import *
 from agent.dqn_agent import DQNAgent
 from agent.networks import CNN
-import torch
+#import torch
 
 import argparse
 
@@ -144,7 +144,7 @@ def train_online(env, agent, num_episodes, history_length=0, num_eval_episodes=2
         # store model.
         if i % eval_cycle == 0 or (i >= num_episodes - 1):
             model_name = name + "_dqn_agent.ckpt"
-            agent.saver.save(agent.sess, os.path.join(model_dir, model_name)) 
+            agent.save(agent.sess, os.path.join(model_dir, model_name)) 
         """
         Schedule for epsilon
         agent.epsilon

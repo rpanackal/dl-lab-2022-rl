@@ -29,13 +29,10 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
     # fix bug of curropted states without rendering in racingcar gym environment
     env.viewer.window.dispatch_events() 
 
-    # forced_accel = True
-
     while True:
         
         # TODO: preprocess the state in the same way than in your preprocessing in train_agent.py
         #    state = ...
-        #state = np.expand_dims(rgb2gray(state), (0,1))
         
         state = rgb2gray(state)
         
@@ -45,9 +42,7 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
         else:
             history = [state for i in range(history_length)]
 
-        #print("length of history", len(history))
         state = np.array(history)[np.newaxis, ...]
-        #print("transformed state",state.shape)
         #print("After expanding dimension- Shape", state.shape, " Type:", type(state))
         
         # TODO: get the action from your agent! You need to transform the discretized actions to continuous
@@ -57,13 +52,10 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
         #       - just in case your agent misses the first turn because it is too fast: you are allowed to clip the acceleration in test_agent.py
         #       - you can use the softmax output to calculate the amount of lateral acceleration
         # a = ...
-        # if not forced_accel:
+
         output = agent.predict(state)
         prediction = torch.argmax(output)
         a = id_to_action(prediction, max_speed=1.0)
-        # else:
-        #     a = np.array([0.0, 1, 0.0])
-        #     forced_accel = False
 
         next_state, r, done, info = env.step(a)   
         episode_reward += r       
@@ -83,7 +75,7 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000, history_length=1
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-hl", "--history_length", help="it's in the name", type=int, default=1)
+    parser.add_argument("-hl", "--history_length", help="it's in the name", type=int, default=5)
     parser.add_argument("-l", "--learning_rate", help="it's in the name", type=float, default=1e-2)    
     args = parser.parse_args()
     # important: don't set rendering to False for evaluation (you may get corrupted state images from gym)

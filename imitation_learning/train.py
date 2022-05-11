@@ -83,22 +83,7 @@ def preprocessing(X_train, y_train, X_valid, y_valid, history_length=1):
     X_valid = rgb2gray(X_valid)
 
     print("...attaching history ",history_length)
-    # X_hist = []
-    # for i in range(len(X_train)):
 
-    #     if i < history_length:
-    #         # States without enough history has first
-    #         # state repeated
-    #         indices = ([0]*(history_length-i-1))
-    #         indices.extend([j for j in range(i+1)])
-
-    #         X_hist.append(X_train[indices, ...])
-    #     else:
-    #         # Append past history_length images
-    #         head = i-history_length+1
-    #         X_hist.append(X_train[head:i+1, ...])
-    
-    # X_hist = np.array(X_hist) 
     X_train = stack_history(X_train, history_length)
     X_valid = stack_history(X_valid, history_length)
 
@@ -175,7 +160,6 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
     minibatch = sample_by_weight(X_train, y_train, batch_size, n_classes)
     minibatch_val = sample_by_weight(X_valid, y_valid, batch_size, n_classes)
 
-    print(X_train.shape)
     #minibatch = sample_minibatch(X_train, y_train, batch_size)
     
 
@@ -202,7 +186,7 @@ def train_model(X_train, y_train, X_valid, n_minibatches, batch_size, lr,
     #     for i % 10 == 0:
     #         # compute training/ validation accuracy and write it to tensorboard
     #         tensorboard_eval.write_episode_data(...)
-      
+
     # TODO: save your agent
     file_name = f"h{history_length}-lr{lr}-agent.pt"
     model_dir = agent.save(os.path.join(model_dir, file_name))
@@ -219,15 +203,15 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    n_minibatches=args.number_mini_batches
-    batch_size=args.batch_size
-    lr=args.learning_rate
     n_classes=5
-    history_length=args.history_length
     model_dir="./models"
     tensorboard_dir="./tensorboard"
 
-
+    n_minibatches=args.number_mini_batches
+    batch_size=args.batch_size
+    lr=args.learning_rate
+    history_length=args.history_length
+    
     # read data    
     X_train, y_train, X_valid, y_valid = read_data("./data")
 
